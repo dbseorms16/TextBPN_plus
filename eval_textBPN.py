@@ -9,7 +9,7 @@ import subprocess
 import torch.backends.cudnn as cudnn
 import torch.utils.data as data
 from dataset import TotalText, Ctw1500Text, Icdar15Text, Mlt2017Text, TD500Text, \
-    ArtText, ArtTextJson, Mlt2019Text, Ctw1500Text_New, TotalText_New
+    ArtText, ArtTextJson, Mlt2019Text, Ctw1500Text_New, TotalText_New, CustomText
 from network.textnet import TextNet
 from cfglib.config import config as cfg, update_config, print_config
 from cfglib.option import BaseOptions
@@ -202,6 +202,12 @@ def main(vis_dir_path):
             is_training=False,
             transform=BaseTransform(size=cfg.test_size, mean=cfg.means, std=cfg.stds)
         )
+    elif cfg.exp_name == 'Custom':
+        testset = CustomText(
+            data_root='data/Custom_data',
+            is_training=False,
+            transform=BaseTransform(size=cfg.test_size, mean=cfg.means, std=cfg.stds)
+        )
     else:
         print("{} is not justify".format(cfg.exp_name))
 
@@ -209,7 +215,7 @@ def main(vis_dir_path):
         cudnn.benchmark = True
 
     # Data
-    test_loader = data.DataLoader(testset, batch_size=1, shuffle=False, num_workers=cfg.num_workers)
+    test_loader = data.DataLoader(testset, batch_size=1, shuffle=False, num_workers=0)
 
     # Model
     model = TextNet(is_training=False, backbone=cfg.net)

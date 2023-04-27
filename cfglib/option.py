@@ -30,7 +30,7 @@ class BaseOptions(object):
         self.parser.add_argument("--local_rank", type=int, default=0)
 
         self.parser.add_argument('--exp_name', default="TD500", type=str,
-                                 choices=['Synthtext', 'Totaltext', 'Ctw1500','Icdar2015',
+                                 choices=['Custom','Synthtext', 'Totaltext', 'Ctw1500','Icdar2015',
                                           "MLT2017", 'TD500', "MLT2019", "ArT", "ALL"], help='Experiment name')
         self.parser.add_argument("--gpu", default="1", help="set gpu id", type=str)
         self.parser.add_argument('--resume', default=None, type=str, help='Path to target resume checkpoint')
@@ -58,7 +58,7 @@ class BaseOptions(object):
         self.parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
         self.parser.add_argument('--batch_size', default=6, type=int, help='Batch size for training')
         self.parser.add_argument('--optim', default='Adam', type=str, choices=['SGD', 'Adam'], help='Optimizer')
-        self.parser.add_argument('--save_freq', default=5, type=int, help='save weights every # epoch')
+        self.parser.add_argument('--save_freq', default=10, type=int, help='save weights every # epoch')
         self.parser.add_argument('--display_freq', default=10, type=int, help='display training metrics every # iter')
         self.parser.add_argument('--viz_freq', default=50, type=int, help='visualize training process every # iter')
         self.parser.add_argument('--log_freq', default=10000, type=int, help='log to tensorboard every # iterations')
@@ -95,7 +95,6 @@ class BaseOptions(object):
         return args
 
     def initialize(self, fixed=None):
-
         # Parse options
         self.args = self.parse(fixed)
         os.environ['CUDA_VISIBLE_DEVICES'] = self.args.gpu
@@ -116,7 +115,7 @@ class BaseOptions(object):
 
         if not os.path.exists(model_save_path):
             os.mkdir(model_save_path)
-
+        
         return self.args
 
     def update(self, args, extra_options):

@@ -7,68 +7,38 @@ from dataset.data_util import pil_load_img
 from dataset.dataload import TextDataset, TextInstance
 from util.io import read_lines
 import cv2
+from util.augmentation import *
 
-
-class Ctw1500Text(TextDataset):
-    def __init__(self, data_root, is_training=True, load_memory=False, transform=None, ignore_list=None):
+class CustomText(TextDataset):
+    def __init__(self, data_root, cfg=None, is_training=True, load_memory=False, transform=None, ignore_list=None):
         super().__init__(transform, is_training)
         self.data_root = data_root
         self.is_training = is_training
         self.load_memory = load_memory
 
-        self.image_root = os.path.join(data_root, 'train' if is_training else 'test', "text_image")
-        self.annotation_root = os.path.join(data_root, 'train' if is_training else 'test', "text_label_circum")
+        self.image_root = os.path.join(data_root, 'train' if is_training else 'test')
+        self.back_root =  os.path.join(data_root, 'train_back' if is_training else 'test_back')
+        # self.annotation_root = os.path.join(data_root, 'train' if is_training else 'test', "text_label_circum")
         self.image_list = os.listdir(self.image_root)
+        self.back_image_list = os.listdir(self.back_root)
         self.annotation_list = ['{}'.format(img_name.replace('.jpg', '')) for img_name in self.image_list]
+        # self.augmentation = Augmentation(size=cfg.input_size, mean=cfg.means, std=cfg.stds)
 
         if self.load_memory:
             self.datas = list()
             for item in range(len(self.image_list)):
-                self.datas.append(self.load_img_gt(item))
+                self.datas.append(self.load_img(item))
 
-    @staticmethod
-    def parse_carve_txt(gt_path):
-        """
-        .mat file parser
-        :param gt_path: (str), mat file path
-        :return: (list), TextInstance
-        """
-        lines = read_lines(gt_path + ".txt")
-        polygons = []
-        for line in lines:
-            # line = strs.remove_all(line.strip('\ufeff'), '\xef\xbb\xbf')
-            gt = list(map(int, line.split(',')))
-            pts = np.stack([gt[4::2], gt[5::2]]).T.astype(np.int32)
-            pts[:, 0] = pts[:, 0] + gt[0]
-            pts[:, 1] = pts[:, 1] + gt[1]
-            polygons.append(TextInstance(pts, 'c', "**"))
-        # gt: [166, 462, 573, 611, 11, 0, 74, 26, 140, 39, 205, 53, 271, 59, 338, 59, 407, 49, 396, 149, 330, 137, 263, 128, 198, 116, 132, 105, 66, 94, 0, 83] 
-        # polygons : [{'orient': 'c', 'text': '**', 'bottoms': None, 'e1': None, 'e2': None, 'label': 1, 'points': array([[280, 722],
-        # polygons.append(TextInstance(pts, 'c', "**"))
-        return polygons
 
-    def load_img_gt(self, item):
-        image_id = self.image_list[item]
-        image_path = os.path.join(self.image_root, image_id)
+    def load_img(self, img_root, image_id):
+        image_path = os.path.join(img_root, image_id)
 
         # Read image data
-        image = pil_load_img(image_path)
-        try:
-            h, w, c = image.shape
-            assert (c == 3)
-        except:
-            image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = np.array(image)
-
-        # Read annotation
-        annotation_id = self.annotation_list[item]
-        annotation_path = os.path.join(self.annotation_root, annotation_id)
-        polygons = self.parse_carve_txt(annotation_path)
-
+        image = Image.open(image_path)
+        image = image.convert('RGBA')
         data = dict()
         data["image"] = image
-        data["polygons"] = polygons
+        # data["polygons"] = polygons
         data["image_id"] = image_id.split("/")[-1]
         data["image_path"] = image_path
 
@@ -79,18 +49,42 @@ class Ctw1500Text(TextDataset):
         if self.load_memory:
             data = self.datas[item]
         else:
-            data = self.load_img_gt(item)
-
+            image_id = self.image_list[item]
+            data = self.load_img(self.image_root, image_id)
+            
+            random_id = random.randint(0, len(self.back_image_list))
+            random_id = self.back_image_list[random_id]
+            back_data = self.load_img(self.back_root, random_id)
+            
+        image, polygons = perform_operation(data['image'], back_data['image'], magnitude=0.1)
+        image = np.array(image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+        
+        polygons = self.polygons_converter(polygons)
+        
         if self.is_training:
-            return self.get_training_data(data["image"], data["polygons"],
+            return self.get_training_data(image, polygons, 
                                           image_id=data["image_id"], image_path=data["image_path"])
+            
+            # return self.get_training_data(data["image"], data["polygons"],
+            #                               image_id=data["image_id"], image_path=data["image_path"])
         else:
-            return self.get_test_data(data["image"], data["polygons"],
-                                      image_id=data["image_id"], image_path=data["image_path"])
+            image, meta = self.get_test_data_only_image(image, polygons, image_id=data["image_id"], image_path=data["image_path"])
+            return image, meta
 
     def __len__(self):
         return len(self.image_list)
-
+    
+    def polygons_converter(self, polygon):
+        
+        polygons = []
+        new = []
+        for x,y in polygon:
+            pts = np.array([x, y]).astype(np.int32)
+            new.append(pts)
+        polygons.append(TextInstance(new, 'c', "**"))
+     
+        return polygons
 
 if __name__ == '__main__':
     from util.augmentation import Augmentation

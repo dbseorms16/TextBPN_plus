@@ -26,7 +26,7 @@ class PolyMatchingLoss(nn.Module):
 
         pidxall = torch.from_numpy(np.reshape(pidxall, newshape=(batch_size, -1))).to(device)
         self.feature_id = pidxall.unsqueeze_(2).long().expand(pidxall.size(0), pidxall.size(1), 2).detach()
-        print(self.feature_id.shape)
+        # print(self.feature_id.shape)
 
     def match_loss(self, pred, gt):
         batch_size = pred.shape[0]

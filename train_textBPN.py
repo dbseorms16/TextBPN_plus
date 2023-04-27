@@ -10,7 +10,7 @@ from torch.optim import lr_scheduler
 from torch.utils.data import ConcatDataset
 from torch.utils.data.distributed import DistributedSampler
 from dataset import SynthText, TotalText, Ctw1500Text, Icdar15Text, LsvtTextJson,\
-    Mlt2017Text, TD500Text, ArtTextJson, Mlt2019Text, Ctw1500Text_New, TotalText_New, ArtText
+    Mlt2017Text, TD500Text, ArtTextJson, Mlt2019Text, Ctw1500Text_New, TotalText_New, ArtText, CustomText
 from network.loss import TextLoss
 from network.textnet import TextNet
 from util.augmentation import Augmentation
@@ -23,7 +23,7 @@ from util.summary import LogSummary
 from util.shedule import FixLR
 import torch.distributed as dist
 # multiprocessing.set_start_method("spawn", force=True)
-
+import collections
 lr = None
 train_step = 0
 
@@ -34,7 +34,7 @@ def save_model(model, epoch, lr, optimzer):
     if not os.path.exists(save_dir):
         mkdirs(save_dir)
 
-    save_path = os.path.join(save_dir, 'TextBPN_{}_{}.pth'.format(model.backbone_name, epoch))
+    save_path = os.path.join(save_dir, 'TextBPN_{}_{}.pth'.format(cfg.net, epoch))
     print('Saving to {}.'.format(save_path))
     state_dict = {
         'lr': lr,
@@ -46,9 +46,16 @@ def save_model(model, epoch, lr, optimzer):
 
 
 def load_model(model, model_path):
-    print('Loading from {}'.format(model_path))
     state_dict = torch.load(model_path)
-    model.load_state_dict(state_dict['model'])
+    
+    new_dict = collections.OrderedDict()
+    
+    if cfg.mgpu:
+        for k in state_dict['model'].keys():
+            new_k = 'module.' + k
+            new_dict[new_k] = state_dict['model'][k]
+    
+    model.load_state_dict(new_dict)
 
 
 def _parse_data(inputs):
@@ -78,20 +85,20 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
     model.train()
     # scheduler.step()
 
-    print('Epoch: {} : LR = {}'.format(epoch, scheduler.get_lr()))
-
     for i, inputs in enumerate(train_loader):
         data_time.update(time.time() - end)
         train_step += 1
         
         input_dict = _parse_data(inputs)
         output_dict = model(input_dict)
+        
         loss_dict = criterion(input_dict, output_dict, eps=epoch+1)
         loss = loss_dict["total_loss"]
         # backward
         try:
             optimizer.zero_grad()
             loss.backward()
+            
         except:
             print("loss gg")
             continue
@@ -125,11 +132,11 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
         else:
             if epoch % cfg.save_freq == 0:
                 save_model(model, epoch, scheduler.get_lr(), optimizer)
-    else:
-        if epoch % cfg.save_freq == 0 and epoch > 50:
-            save_model(model, epoch, scheduler.get_lr(), optimizer)
+    # else:
+        # if epoch % 5 == 0:
+    save_model(model, epoch, scheduler.get_lr(), optimizer)
 
-    print('Training Loss: {}'.format(losses.avg))
+    print('Detail=No_bp, gt=4 , Epoch: {} : LR = {}'.format(epoch, scheduler.get_lr()), 'Training Loss: {}'.format(losses.avg))
 
 
 def main():
@@ -207,6 +214,16 @@ def main():
         )
         valset = None
 
+    elif cfg.exp_name == 'Custom':
+        trainset = CustomText(
+            data_root='data/Custom_data',
+            is_training=True,
+            load_memory=cfg.load_memory,
+            cfg=cfg,
+            transform=Augmentation(size=cfg.input_size, mean=cfg.means, std=cfg.stds)
+        )
+        valset = None
+        
     elif cfg.exp_name == 'ALL':
         trainset_art = ArtTextJson(
             data_root='data/ArT',
@@ -242,12 +259,15 @@ def main():
                                     pin_memory=True)  # generator=torch.Generator(device=cfg.device)
     # Model
     model = TextNet(backbone=cfg.net, is_training=True)
+    
     criterion = TextLoss()
-    model = model.to(cfg.device)
     if cfg.mgpu:
-        model = nn.DataParallel(model)
-        model.module.to(cfg.device)
-        
+        model = model.cuda()
+        model = nn.DataParallel(model, device_ids=[int(x) for x in args.gpu.split(',')]).cuda()
+
+        # model = model.module.to(cfg.device)
+    else:
+        model = model.to(cfg.device)
     if cfg.cuda:
         cudnn.benchmark = True
     if cfg.resume:
@@ -265,7 +285,6 @@ def main():
     else:
         scheduler = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.9)
 
-    print('Start training TextBPN++.')
     for epoch in range(cfg.start_epoch, cfg.max_epoch+1):
         scheduler.step()
         # if epoch <= 300:
@@ -282,17 +301,17 @@ if __name__ == "__main__":
     np.random.seed(2022)
     torch.manual_seed(2022)
     
-    dist_url = 'env://'
-    rank = int(os.environ['RANK'])
-    world_size = int(os.environ['WORLD_SIZE'])
-    local_rank = int(os.environ['LOCAL_RANK'])
+    # dist_url = 'env://'
+    # rank = int(os.environ['RANK'])
+    # world_size = int(os.environ['WORLD_SIZE'])
+    # local_rank = int(os.environ['LOCAL_RANK'])
         
-    dist.init_process_group("nccl", init_method=dist_url, world_size=world_size, rank=rank)
-    torch.cuda.set_device(local_rank)
-    dist.barrier()
+    # dist.init_process_group("nccl", init_method=dist_url, world_size=world_size, rank=rank)
+    # torch.cuda.set_device(local_rank)
+    # dist.barrier()
     
-    if dist.get_rank()  == 0:
-        print(f'RANK {rank}, WORLD_SIZE {world_size}, LOCAL_RANK {local_rank}')
+    # if dist.get_rank()  == 0:
+    #     print(f'RANK {rank}, WORLD_SIZE {world_size}, LOCAL_RANK {local_rank}')
     # parse arguments
     option = BaseOptions()
     args = option.initialize()
@@ -300,6 +319,8 @@ if __name__ == "__main__":
     update_config(cfg, args)
     # print_config(cfg)
 
+    # print('Start training TextBPN.')
+    # print('Loading from {}'.format(cfg.resume))
     # main
     main()
 

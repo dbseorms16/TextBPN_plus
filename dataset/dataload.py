@@ -240,6 +240,71 @@ class TextDataset(object):
         return image, train_mask, tr_mask, distance_field, \
                direction_field, weight_matrix, gt_points, proposal_points, ignore_tags
 
+
+    def get_training_data_only_image(self, image, polygons, image_id=None, image_path=None):
+        
+        np.random.seed()
+        if self.transform:
+            #image, polygons = self.transform(image, polygons)
+            image, polygons = self.transform(copy.deepcopy(image), copy.deepcopy(polygons))
+            
+        np.random.seed()
+        # # to pytorch channel sequence
+        train_mask, tr_mask, \
+        distance_field, direction_field, \
+        weight_matrix, gt_points, proposal_points, ignore_tags = self.make_text_region(image, polygons)
+
+        # # to pytorch channel sequence
+        image = image.transpose(2, 0, 1)
+        image = torch.from_numpy(image).float()
+
+        train_mask = torch.from_numpy(train_mask).bool()
+        tr_mask = torch.from_numpy(tr_mask).int()
+        weight_matrix = torch.from_numpy(weight_matrix).float()
+        direction_field = torch.from_numpy(direction_field).float()
+        distance_field = torch.from_numpy(distance_field).float()
+        gt_points = torch.from_numpy(gt_points).float()
+        proposal_points = torch.from_numpy(proposal_points).float()
+        ignore_tags = torch.from_numpy(ignore_tags).int()
+
+        return image, train_mask, tr_mask, distance_field, \
+               direction_field, weight_matrix, gt_points, proposal_points, ignore_tags
+    
+    def get_test_data_only_image(self, image, polygons, image_id=None, image_path=None):
+        
+        H, W, _ = image.shape
+        if self.transform:
+            image, polygons = self.transform(image, polygons)
+
+        # max point per polygon for annotation
+        points = np.zeros((cfg.max_annotation, 20, 2))
+        length = np.zeros(cfg.max_annotation, dtype=int)
+        label_tag = np.zeros(cfg.max_annotation, dtype=int)
+        if polygons is not None:
+            for i, polygon in enumerate(polygons):
+                pts = polygon.points
+                points[i, :pts.shape[0]] = polygon.points
+                length[i] = pts.shape[0]
+                if polygon.text != '#':
+                    label_tag[i] = 1
+                else:
+                    label_tag[i] = -1
+
+        meta = {
+            'image_id': image_id,
+            'image_path': image_path,
+            'annotation': points,
+            'n_annotation': length,
+            'label_tag': label_tag,
+            'Height': H,
+            'Width': W
+        }
+        image = image.transpose(2, 0, 1)
+        image = torch.from_numpy(image).float()
+        
+        return image, meta
+               
+               
     def get_test_data(self, image, polygons=None, image_id=None, image_path=None):
         H, W, _ = image.shape
         if self.transform:

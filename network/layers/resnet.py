@@ -31,7 +31,7 @@ class ResNet(nn.Module):
             print(" base model is not support !")
 
         if pretrain:
-            print("load the {} weight from ./cache".format(name))
+            # print("load the {} weight from ./cache".format(name))
             base_net.load_state_dict(model_zoo.load_url(model_urls[name], model_dir="./cache",
                                                         map_location=torch.device(cfg.device)), strict=False)
         # print(base_net)

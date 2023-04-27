@@ -6,3 +6,7 @@
 *.jpg
 *.pyc
 *.mat
+*.JPG
+*.gt
+.DS_Store
+obj.*
