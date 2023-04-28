@@ -15,7 +15,7 @@ class CustomText(TextDataset):
         self.data_root = data_root
         self.is_training = is_training
         self.load_memory = load_memory
-
+        self.cfg = cfg
         self.image_root = os.path.join(data_root, 'train' if is_training else 'test')
         self.back_root =  os.path.join(data_root, 'train_back' if is_training else 'test_back')
         # self.annotation_root = os.path.join(data_root, 'train' if is_training else 'test', "text_label_circum")
@@ -60,7 +60,7 @@ class CustomText(TextDataset):
         image = np.array(image)
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
         
-        polygons = self.polygons_converter(polygons, num_poly=4)
+        polygons = self.polygon_extender(polygons, num_poly=self.cfg.num_poly)
         
         if self.is_training:
             return self.get_training_data(image, polygons, 
@@ -75,32 +75,30 @@ class CustomText(TextDataset):
     def __len__(self):
         return len(self.image_list)
     
-    def polygons_converter(self, polygon, num_poly=None):
+    def poly(self, s, e, num_poly):
+        nps = []
+        poly_num = num_poly 
+        nps.append([s[0], s[1]])
+        min_x, min_y = min(s[0], e[0]), min(s[1], e[1])
+        s_x = abs(int((s[0] - e[0]) // poly_num))
+        s_y = abs(int((s[1] - e[1]) // poly_num))
+        for i in range(1, poly_num):
+            n_p = [min_x+s_x*i, min_y+s_y*i]
+            
+            nps.append(n_p)
         
+        return nps
+    # read input
+    def polygon_extender(self, polygon, num_poly=2):
         polygons = []
-        new = []
-        for index, (x,y) in enumerate(polygon):
-            pts = np.array([x, y]).astype(np.int32)
-            new.append(pts)
-            
-            # if num_poly and index > 0 :
-            #     for ms in range(2, num_poly+1):
-                    
-            #         clone_x = int((oldx + x) // ms)
-            #         clone_y = int((oldy + y) // ms)
-            #         for m in range(1, ms):
-            #         clone_pts = np.array([clone_x, clone_y]).astype(np.int32)
-            #         new.append(clone_pts)
-                    
-            # oldx, oldy = x, y 
-            
+        n1 = self.poly(polygon[0], polygon[1], num_poly)
+        n2 = self.poly(polygon[1], polygon[2], num_poly)
+        n3 = self.poly(polygon[2], polygon[3], num_poly)
+        n4 = self.poly(polygon[3], polygon[0], num_poly)
+        new = n1 + n2 + n3 + n4
         polygons.append(TextInstance(new, 'c', "**"))
-     
-        return polygons
 
-    def polygon_clone(self, polygon):
-    
-        return polygon
+        return polygons
     
 if __name__ == '__main__':
     from util.augmentation import Augmentation

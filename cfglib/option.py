@@ -71,6 +71,7 @@ class BaseOptions(object):
                                           "deformable_resnet18", "deformable_resnet50"],
                                  help='Network architecture')
         # data args
+        self.parser.add_argument('--num_poly', default=2, type=int, help='Load data into memory')
         self.parser.add_argument('--load_memory', default=False, type=str2bool, help='Load data into memory')
         self.parser.add_argument('--rescale', type=float, default=255.0, help='rescale factor')
         self.parser.add_argument('--input_size', default=640, type=int, help='model input size')

@@ -206,7 +206,8 @@ def main(vis_dir_path):
         testset = CustomText(
             data_root='data/Custom_data',
             is_training=False,
-            transform=BaseTransform(size=cfg.test_size, mean=cfg.means, std=cfg.stds)
+            transform=BaseTransform(size=cfg.test_size, mean=cfg.means, std=cfg.stds),
+            cfg=cfg
         )
     else:
         print("{} is not justify".format(cfg.exp_name))
