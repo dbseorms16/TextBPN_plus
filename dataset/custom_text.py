@@ -60,7 +60,7 @@ class CustomText(TextDataset):
         image = np.array(image)
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
         
-        polygons = self.polygons_converter(polygons)
+        polygons = self.polygons_converter(polygons, num_poly=4)
         
         if self.is_training:
             return self.get_training_data(image, polygons, 
@@ -75,17 +75,33 @@ class CustomText(TextDataset):
     def __len__(self):
         return len(self.image_list)
     
-    def polygons_converter(self, polygon):
+    def polygons_converter(self, polygon, num_poly=None):
         
         polygons = []
         new = []
-        for x,y in polygon:
+        for index, (x,y) in enumerate(polygon):
             pts = np.array([x, y]).astype(np.int32)
             new.append(pts)
+            
+            # if num_poly and index > 0 :
+            #     for ms in range(2, num_poly+1):
+                    
+            #         clone_x = int((oldx + x) // ms)
+            #         clone_y = int((oldy + y) // ms)
+            #         for m in range(1, ms):
+            #         clone_pts = np.array([clone_x, clone_y]).astype(np.int32)
+            #         new.append(clone_pts)
+                    
+            # oldx, oldy = x, y 
+            
         polygons.append(TextInstance(new, 'c', "**"))
      
         return polygons
 
+    def polygon_clone(self, polygon):
+    
+        return polygon
+    
 if __name__ == '__main__':
     from util.augmentation import Augmentation
     from util.misc import regularize_sin_cos
