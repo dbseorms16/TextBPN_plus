@@ -38,7 +38,7 @@ def find_coeffs(pa, pb):
 
     return perspective_skew_coefficients_matrix
 
-def perform_operation(images, back, magnitude):
+def perform_operation(images, back, magnitude, is_training=False):
         """
         Perform the skew on the passed image(s) and returns the transformed
         image(s). Uses the :attr:`skew_type` and :attr:`magnitude` parameters
@@ -171,7 +171,11 @@ def perform_operation(images, back, magnitude):
             
             
             a, b, c, d, e, f, g, h = new
-            pos_x, pos_y = rd.randint(0, abs(int(b_w - w_pad))), rd.randint(0, abs(int(b_h - h_pad)))
+            if is_training:
+                pos_x, pos_y = rd.randint(0, abs(int(b_w - w_pad))), rd.randint(0, abs(int(b_h - h_pad)))
+            else :
+                pos_x, pos_y = abs(int(b_w//2)-(width//2)), abs(int(b_h//2)-(height//2))
+                
             coordinates = []
             for px, py in original_plane:
                 new_x = float(a * px + b * py + c) / float(g * px + h * py + 1)

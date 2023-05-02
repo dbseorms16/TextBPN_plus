@@ -270,14 +270,13 @@ class TextDataset(object):
         return image, train_mask, tr_mask, distance_field, \
                direction_field, weight_matrix, gt_points, proposal_points, ignore_tags
     
-    def get_test_data_only_image(self, image, polygons, image_id=None, image_path=None):
+    def get_test_data_only_image(self, image, polygons, num_poly,image_id=None, image_path=None):
         
         H, W, _ = image.shape
         if self.transform:
             image, polygons = self.transform(image, polygons)
-
         # max point per polygon for annotation
-        points = np.zeros((cfg.max_annotation, 20, 2))
+        points = np.zeros((cfg.max_annotation, num_poly*4, 2))
         length = np.zeros(cfg.max_annotation, dtype=int)
         label_tag = np.zeros(cfg.max_annotation, dtype=int)
         if polygons is not None:

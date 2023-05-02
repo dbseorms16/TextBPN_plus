@@ -51,12 +51,15 @@ class CustomText(TextDataset):
         else:
             image_id = self.image_list[item]
             data = self.load_img(self.image_root, image_id)
+            if self.is_training:
+                random_id = random.randint(0, len(self.back_image_list))
+                image_id = self.back_image_list[random_id]
+            else:
+                ##Todo auto
+                image_id = '0'+ image_id[1:-4] + '.jpg'
+            back_data = self.load_img(self.back_root, image_id)
             
-            random_id = random.randint(0, len(self.back_image_list))
-            random_id = self.back_image_list[random_id]
-            back_data = self.load_img(self.back_root, random_id)
-            
-        image, polygons = perform_operation(data['image'], back_data['image'], magnitude=0.1)
+        image, polygons = perform_operation(data['image'], back_data['image'], magnitude=0.1, is_training=self.is_training )
         image = np.array(image)
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
         
@@ -69,7 +72,7 @@ class CustomText(TextDataset):
             # return self.get_training_data(data["image"], data["polygons"],
             #                               image_id=data["image_id"], image_path=data["image_path"])
         else:
-            image, meta = self.get_test_data_only_image(image, polygons, image_id=data["image_id"], image_path=data["image_path"])
+            image, meta = self.get_test_data_only_image(image, polygons, num_poly=self.cfg.num_poly, image_id=data["image_id"], image_path=data["image_path"])
             return image, meta
 
     def __len__(self):
@@ -80,13 +83,22 @@ class CustomText(TextDataset):
         poly_num = num_poly 
         nps.append([s[0], s[1]])
         min_x, min_y = min(s[0], e[0]), min(s[1], e[1])
-        s_x = abs(int((s[0] - e[0]) // poly_num))
-        s_y = abs(int((s[1] - e[1]) // poly_num))
+        if min_x == s[0]:
+            min_y = s[1]
+            max_x = e[0]
+            max_y = e[1]
+        else :
+            min_y = e[1]
+            min_x = e[0]
+            max_x = s[0]
+            max_y = s[1]
+            
+        s_x = int((max_x - min_x)  // poly_num)
+        s_y = int((max_y - min_y) // poly_num)
         for i in range(1, poly_num):
-            n_p = [min_x+s_x*i, min_y+s_y*i]
+            n_p = [min_x + int(s_x * i), min_y +int(s_y * i)]
             
             nps.append(n_p)
-        
         return nps
     # read input
     def polygon_extender(self, polygon, num_poly=2):

@@ -59,7 +59,7 @@ class BaseOptions(object):
         self.parser.add_argument('--batch_size', default=6, type=int, help='Batch size for training')
         self.parser.add_argument('--optim', default='Adam', type=str, choices=['SGD', 'Adam'], help='Optimizer')
         self.parser.add_argument('--save_freq', default=5, type=int, help='save weights every # epoch')
-        self.parser.add_argument('--display_freq', default=10, type=int, help='display training metrics every # iter')
+        self.parser.add_argument('--display_freq', default=11, type=int, help='display training metrics every # iter')
         self.parser.add_argument('--viz_freq', default=50, type=int, help='visualize training process every # iter')
         self.parser.add_argument('--log_freq', default=10000, type=int, help='log to tensorboard every # iterations')
         self.parser.add_argument('--val_freq', default=1000, type=int, help='do validation every # iterations')

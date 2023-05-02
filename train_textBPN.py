@@ -37,7 +37,7 @@ def save_model(model, epoch, lr, optimzer):
     if not os.path.exists(save_dir):
         mkdirs(save_dir)
 
-    save_path = os.path.join(save_dir, 'TextBPN_{}_{}.pth'.format(cfg.net, epoch))
+    save_path = os.path.join(save_dir, 'TextBPN_{}_{}_{}.pth'.format(cfg.num_poly, cfg.net, epoch))
     print('Saving to {}.'.format(save_path))
     state_dict = {
         'lr': lr,
