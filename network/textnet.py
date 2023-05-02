@@ -151,7 +151,6 @@ class Evolution(nn.Module):
 
     def forward(self, embed_feature, input=None, seg_preds=None, switch="gt"):
         if self.is_training:
-            
             init_polys, inds, confidences = self.get_boundary_proposal(input=input, seg_preds=seg_preds, switch=switch)
             # TODO sample fix number
         else:
@@ -163,7 +162,6 @@ class Evolution(nn.Module):
         for i in range(self.iter):
             evolve_gcn = self.__getattr__('evolve_gcn' + str(i))
             init_polys = self.evolve_poly(evolve_gcn, embed_feature, init_polys, inds[0])
-
             py_preds.append(init_polys)
 
         return py_preds, inds, confidences

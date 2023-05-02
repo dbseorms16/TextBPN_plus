@@ -4,7 +4,7 @@
 #CUDA_LAUNCH_BLOCKING=1 python eval_textBPN.py --exp_name Totaltext --checkepoch 540 --test_size 640 800 --dis_threshold 0.315 --cls_threshold 0.85 --gpu 1
 ###################### CTW-1500 ####################################
 # test_size=(640,1024)--cfglib/option
-CUDA_LAUNCH_BLOCKING=1 python3 eval_textBPN.py --num_poly 4 --exp_name Custom --checkepoch 137 --test_size 640 1024 --dis_threshold 0.375 --cls_threshold 0.8 --gpu 7 --viz
+CUDA_LAUNCH_BLOCKING=1 python3 eval_textBPN.py --num_poly 4 --exp_name Custom --checkepoch 25 --test_size 640 1024 --dis_threshold 0.375 --cls_threshold 0.8 --gpu 7 --viz
 
 #################### MSRA-TD500 ######################################
 # test_size=(640,1024)--cfglib/option

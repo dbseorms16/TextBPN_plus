@@ -32,8 +32,7 @@ class ResNet(nn.Module):
 
         if pretrain:
             # print("load the {} weight from ./cache".format(name))
-            base_net.load_state_dict(model_zoo.load_url(model_urls[name], model_dir="./cache",
-                                                        map_location=torch.device(cfg.device)), strict=False)
+            base_net.load_state_dict(model_zoo.load_url(model_urls[name], model_dir="./cache"), strict=False)
         # print(base_net)
         self.stage1 = nn.Sequential(
             base_net.conv1,
