@@ -9,6 +9,7 @@ import numpy as np
 from network.layers.CircConv import DeepSnake
 from network.layers.GCN import GCN
 from network.layers.RNN import RNN
+from network.layers.gcn_rnn import GCN_RNN
 from network.layers.Adaptive_Deformation import AdaptiveDeformation
 # from network.layers.Transformer_old import Transformer_old
 from network.layers.Transformer import Transformer
@@ -21,7 +22,7 @@ import time
 
 
 class Evolution(nn.Module):
-    def __init__(self, node_num, adj_num, is_training=True, device=None, model="snake"):
+    def __init__(self, node_num, iteration, adj_num, is_training=True, device=None, model="snake"):
         super(Evolution, self).__init__()
         self.node_num = node_num
         self.adj_num = adj_num
@@ -29,7 +30,7 @@ class Evolution(nn.Module):
         self.is_training = is_training
         self.clip_dis = 16
 
-        self.iter = 3
+        self.iter = iteration
         if model == "gcn":
             self.adj = get_adj_mat(self.adj_num, self.node_num)
             self.adj = normalize_adj(self.adj, type="DAD").float().to(self.device)
@@ -46,6 +47,13 @@ class Evolution(nn.Module):
             self.adj = normalize_adj(self.adj, type="DAD").float().to(self.device)
             for i in range(self.iter):
                 evolve_gcn = AdaptiveDeformation(36, 128)
+                self.__setattr__('evolve_gcn' + str(i), evolve_gcn)
+                
+        elif model == "gcn_rnn":
+            self.adj = get_adj_mat(self.adj_num, self.node_num)
+            self.adj = normalize_adj(self.adj, type="DAD").float().to(self.device)
+            for i in range(self.iter):
+                evolve_gcn = GCN_RNN(36, 128)
                 self.__setattr__('evolve_gcn' + str(i), evolve_gcn)
         # elif model == "BT_old":
         #     self.adj = None
@@ -169,7 +177,7 @@ class Evolution(nn.Module):
 
 class TextNet(nn.Module):
 
-    def __init__(self, backbone='vgg', is_training=True):
+    def __init__(self, backbone='vgg', iteration=3, is_training=True):
         super().__init__()
         self.is_training = is_training
         self.backbone_name = backbone
@@ -182,9 +190,9 @@ class TextNet(nn.Module):
             nn.PReLU(),
             nn.Conv2d(16, 4, kernel_size=1, stride=1, padding=0),
         )
-        self.BPN = Evolution(cfg.num_points, adj_num=4,
+        self.BPN = Evolution(cfg.num_points, iteration, adj_num=4,
                              is_training=is_training, device=cfg.device, model="BT")
-
+                            #  is_training=is_training, device=cfg.device, model="BT")
     def load_model(self, model_path):
         print('Loading from {}'.format(model_path))
         state_dict = torch.load(model_path, map_location=torch.device(cfg.device))

@@ -88,8 +88,8 @@ def perform_operation(images, back, magnitude, is_training=False):
         # skew = "TILT_TOP_BOTTOM"
         # We have two choices now: we tilt in one of four directions
         # or we skew a corner.
-        skew == "CORNER"
-        skew_direction = 6
+        # skew == "CORNER"
+        # skew_direction = 6
         
         if skew == "TILT" or skew == "TILT_LEFT_RIGHT" or skew == "TILT_TOP_BOTTOM":
 

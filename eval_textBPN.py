@@ -101,9 +101,9 @@ def inference(model, test_loader, output_dir):
 
             show_map = np.concatenate([heat_map, gt_vis], axis=1)
             show_map = cv2.resize(show_map, (320 * 3, 320))
+            print(show_map.shape, show_boundary.shape)
             im_vis = np.concatenate([show_map, show_boundary], axis=0)
-
-            path = os.path.join(cfg.vis_dir, '{}_test'.format(cfg.exp_name), meta['image_id'][idx].split(".")[0]+".jpg")
+            path = os.path.join(cfg.vis_dir, '{}_{}_{}_test'.format(cfg.iter, cfg.exp_name, cfg.num_poly), meta['image_id'][idx].split(".")[0]+".jpg")
             cv2.imwrite(path, im_vis)
 
         contours = output_dict["py_preds"][-1].int().cpu().numpy()
@@ -219,9 +219,10 @@ def main(vis_dir_path):
     test_loader = data.DataLoader(testset, batch_size=1, shuffle=False, num_workers=0)
 
     # Model
-    model = TextNet(is_training=False, backbone=cfg.net)
+    model = TextNet(is_training=False, iteration=cfg.iter, backbone=cfg.net)
     model_path = os.path.join(cfg.save_dir, cfg.exp_name,
-                              'TextBPN_{}_{}_{}.pth'.format(cfg.num_poly, model.backbone_name, cfg.checkepoch))
+                              'TextBPN_{}_{}_{}_{}.pth'.format(cfg.iter, cfg.num_poly, model.backbone_name, cfg.checkepoch))
+                            #   'TextBPN_{}_{}_{}.pth'.format(cfg.num_poly, model.backbone_name, cfg.checkepoch))
 
     model.load_model(model_path)
     model = model.to(cfg.device)  # copy to cuda
@@ -253,7 +254,7 @@ if __name__ == "__main__":
     update_config(cfg, args)
     print_config(cfg)
 
-    vis_dir = os.path.join(cfg.vis_dir, '{}_test'.format(cfg.exp_name))
+    vis_dir = os.path.join(cfg.vis_dir, '{}_{}_{}_test'.format(cfg.iter, cfg.exp_name, cfg.num_poly))
 
     if not os.path.exists(vis_dir):
         mkdirs(vis_dir)

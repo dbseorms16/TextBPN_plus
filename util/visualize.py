@@ -153,10 +153,9 @@ def visualize_detection(image, output_dict, meta=None):
     cls_preds = F.interpolate(output_dict["fy_preds"], scale_factor=cfg.scale, mode='bilinear')
     cls_preds = cls_preds[0].data.cpu().numpy()
 
-    py_preds = output_dict["py_preds"][1:]
+    py_preds = output_dict["py_preds"][1:][cfg.iter-3:]
     init_polys = output_dict["py_preds"][0]
     shows = []
-
     init_py = init_polys.data.cpu().numpy()
     path = os.path.join(cfg.vis_dir, '{}_test'.format(cfg.exp_name),
                         meta['image_id'][0].split(".")[0] + "_init.png")
