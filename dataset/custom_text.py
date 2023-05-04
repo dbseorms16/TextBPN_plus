@@ -93,8 +93,8 @@ class CustomText(TextDataset):
             max_x = s[0]
             max_y = s[1]
             
-        s_x = int((max_x - min_x)  // poly_num)
-        s_y = int((max_y - min_y) // poly_num)
+        s_x = (max_x - min_x)  / poly_num
+        s_y = (max_y - min_y) / poly_num
         for i in range(1, poly_num):
             n_p = [min_x + int(s_x * i), min_y +int(s_y * i)]
             
