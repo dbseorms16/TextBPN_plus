@@ -938,7 +938,7 @@ class Augmentation(object):
         self.augmentation = Compose([
             RandomCropFlip(),
             RandomResizeScale(size=self.size, ratio=(3. / 8, 5. / 2)),
-            RandomResizedCrop(),
+            # RandomResizedCrop(),
             RotatePadding(up=60, colors=True),  # pretrain on Syn is "up=30", else is "up=60"
             ResizeLimitSquare(size=self.size),
             RandomMirror(),
