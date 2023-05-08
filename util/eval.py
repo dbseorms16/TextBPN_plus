@@ -171,7 +171,6 @@ def data_transfer_ICDAR(contours):
         cnts.append(points)
     return cnts
 
-
 def data_transfer_TD500(contours, res_file, img=None):
     with open(res_file, 'w') as f:
         for cont in contours:
@@ -207,6 +206,19 @@ def data_transfer_TD500(contours, res_file, img=None):
     return img
 
 
+def data_transfer_Custom(contours):
+    cnts = list()
+    for cont in contours:
+        rect = cv2.minAreaRect(cont)
+        if min(rect[1][0], rect[1][1]) <= 5:
+            continue
+        points = cv2.boxPoints(rect)
+        points = np.int0(points)
+        # print(points.shape)
+        # points = np.reshape(points, (4, 2))
+        cnts.append(points)
+    return cnts
+
 def data_transfer_MLT2017(contours, res_file):
     with open(res_file, 'w') as f:
         for cont in contours:
@@ -224,5 +236,32 @@ def data_transfer_MLT2017(contours, res_file):
             f.write('{},{},{},{},{},{},{},{},{}\r\n'
                     .format(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], 1))
 
+def deal_eval_custom(debug=False):
+    # compute DetEval
+    eval_dir = os.path.join(cfg.output_dir, "Analysis", "output_eval")
+    if not os.path.exists(eval_dir):
+        os.makedirs(eval_dir)
+
+    input_dir = 'output/{}'.format(cfg.exp_name)
+    father_path = os.path.abspath(input_dir)
+    print(father_path)
+    print('Computing DetEval in {}/{}'.format(cfg.output_dir, cfg.exp_name))
+    subprocess.call(['sh', 'dataset/custom/eval.sh', father_path])
+
+    if debug:
+        source_dir = os.path.join(cfg.vis_dir, '{}_test'.format(cfg.exp_name))
+        outpt_dir_base = os.path.join(cfg.output_dir, "Analysis", "eval_view", "custom")
+        if not os.path.exists(outpt_dir_base):
+            mkdirs(outpt_dir_base)
+
+        outpt_dir = os.path.join(outpt_dir_base, "{}_{}_{}".format(cfg.test_size[0], cfg.test_size[1], cfg.checkepoch))
+        osmkdir(outpt_dir)
+        fid_path1 = '{}/Eval_custom.txt'.format(eval_dir)
+
+        analysize_result(source_dir, fid_path1, outpt_dir, "custom")
+
+    print('End.')
+
+    pass
 
 

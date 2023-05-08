@@ -215,7 +215,6 @@ class TextNet(nn.Module):
         cnn_feats = torch.cat([up1, fy_preds], dim=1)
 
         py_preds, inds, confidences = self.BPN(cnn_feats, input=input_dict, seg_preds=fy_preds, switch="gt")
-        
         output["fy_preds"] = fy_preds
         output["py_preds"] = py_preds
         output["inds"] = inds

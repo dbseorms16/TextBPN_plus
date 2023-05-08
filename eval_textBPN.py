@@ -17,7 +17,7 @@ from util.augmentation import BaseTransform
 from util.visualize import visualize_detection, visualize_gt
 from util.misc import to_device, mkdirs,rescale_result
 from util.eval import deal_eval_total_text, deal_eval_ctw1500, deal_eval_icdar15, \
-    deal_eval_TD500, data_transfer_ICDAR, data_transfer_TD500, data_transfer_MLT2017
+    deal_eval_TD500, data_transfer_ICDAR, data_transfer_TD500, data_transfer_Custom, data_transfer_MLT2017, deal_eval_custom
 
 import multiprocessing
 multiprocessing.set_start_method("spawn", force=True)
@@ -30,7 +30,7 @@ def osmkdir(out_dir):
     os.makedirs(out_dir)
 
 
-def write_to_file(contours, file_path):
+def write_to_file(contours, file_path, gt=False):
     """
     :param contours: [[x1, y1], [x2, y2]... [xn, yn]]
     :param file_path: target file path
@@ -43,8 +43,11 @@ def write_to_file(contours, file_path):
                 continue
             cont = cont.flatten().astype(str).tolist()
             cont = ','.join(cont)
-            f.write(cont + '\n')
-
+            if gt:
+                f.write(cont +',text'+'\n')
+            else:
+                f.write(cont +'\n')
+                
 
 def inference(model, test_loader, output_dir):
 
@@ -101,14 +104,15 @@ def inference(model, test_loader, output_dir):
 
             show_map = np.concatenate([heat_map, gt_vis], axis=1)
             show_map = cv2.resize(show_map, (320 * 3, 320))
-            print(show_map.shape, show_boundary.shape)
             im_vis = np.concatenate([show_map, show_boundary], axis=0)
             path = os.path.join(cfg.vis_dir, '{}_{}_{}_test'.format(cfg.iter, cfg.exp_name, cfg.num_poly), meta['image_id'][idx].split(".")[0]+".jpg")
             cv2.imwrite(path, im_vis)
 
         contours = output_dict["py_preds"][-1].int().cpu().numpy()
         img_show, contours = rescale_result(img_show, contours, H, W)
-
+        _, gt_contour = rescale_result(img_show, gt_contour, H, W)
+        ##여기도 해야하나
+        
         # path = os.path.join(cfg.vis_dir, '{}_test'.format(cfg.exp_name), meta['image_id'][idx].split(".")[0] + ".jpg")
         # im_show = img_show.copy()
         # im_show = np.ascontiguousarray(im_show[:, :, ::-1])
@@ -131,6 +135,18 @@ def inference(model, test_loader, output_dir):
         elif cfg.exp_name == "TD500":
             fname = "res_" + meta['image_id'][idx].split(".")[0]+".txt"
             data_transfer_TD500(contours, os.path.join(output_dir, fname))
+        elif cfg.exp_name == "Custom":
+            fname = "res_img_" + meta['image_id'][idx].replace('png', 'txt')
+            contours = data_transfer_Custom(contours)
+            write_to_file(contours, os.path.join(output_dir, fname))
+            
+            if not os.path.exists(os.path.join(output_dir,'gt')):
+                mkdirs(os.path.join(output_dir,'gt'))
+            fname = "gt_img_" + meta['image_id'][idx].replace('png', 'txt')
+            gt_contour = data_transfer_Custom(gt_contour)
+            # print(gt_contour)
+            write_to_file(gt_contour, os.path.join(output_dir,'gt', fname), gt=True)
+            
         elif cfg.exp_name == "ArT":
             fname = meta['image_id'][idx].split(".")[0].replace('gt', 'res')
             art_result = []
@@ -237,7 +253,8 @@ def main(vis_dir_path):
 
     elif cfg.exp_name == "Ctw1500":
         deal_eval_ctw1500(debug=True)
-
+    elif cfg.exp_name == "Custom":
+        deal_eval_custom(debug=True)
     elif cfg.exp_name == "Icdar2015":
         deal_eval_icdar15(debug=True)
     elif cfg.exp_name == "TD500":

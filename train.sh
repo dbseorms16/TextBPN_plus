@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python -m torch.distributed.launch --nproc_per_node=7 train_textBPN.py --iter 5 --num_poly 16 --exp_name Custom --net resnet50 --scale 1 --max_epoch 660 --batch_size 40 --mgpu --gpu 0,1,2,3,4,5,6 --input_size 640 --optim Adam --lr 0.001 --num_workers 64 --viz --viz_freq 80
+python -m torch.distributed.launch --nproc_per_node=7 train_textBPN.py --iter 5 --num_poly 16 --exp_name Custom --net resnet50 --scale 1 --max_epoch 660 --batch_size 30 --mgpu --gpu 0,1,2,3,4,5,6 --input_size 640 --optim Adam --lr 0.001 --num_workers 64 --viz --viz_freq 80
 
 #--resume model/Ctw1500/TextBPN_resnet50_390.pth --start_epoch 665
 #--resume model/Synthtext/TextBPN_resnet50_0.pth 
