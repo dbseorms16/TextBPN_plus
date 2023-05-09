@@ -169,7 +169,7 @@ class TextLoss(nn.Module):
             alpha = 1.0; beta = 3.0; theta=0.5; gama = 0.05
         else:
             alpha = 1.0; beta = 3.0; theta=0.5;
-            gama = 0.1*torch.sigmoid(torch.tensor((eps - cfg.max_epoch)/cfg.max_epoch)) * 0.01
+            gama = 0.1*torch.sigmoid(torch.tensor((eps - cfg.max_epoch)/cfg.max_epoch)) * 0.1
         loss = alpha*cls_loss + beta*dis_loss + theta*(norm_loss + angle_loss) + gama*(point_loss + energy_loss)
 
         loss_dict = {
