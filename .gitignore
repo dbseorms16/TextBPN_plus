@@ -10,3 +10,4 @@
 *.gt
 .DS_Store
 obj.*
+*.JPEG

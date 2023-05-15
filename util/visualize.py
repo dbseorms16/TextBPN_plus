@@ -237,7 +237,7 @@ def visualize_detection(image, output_dict, meta=None):
 
     cls_pred = cav.heatmap(np.array(cls_preds[0] * 255, dtype=np.uint8))
     dis_pred = cav.heatmap(np.array(cls_preds[1] * 255, dtype=np.uint8))
-
+    # print(np.array(cls_preds[0] * 255, dtype=np.uint8))
     heat_map = np.concatenate([cls_pred*255, dis_pred*255], axis=1)
     heat_map = cv2.resize(heat_map, (320 * 2, 320))
 

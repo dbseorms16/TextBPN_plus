@@ -101,12 +101,31 @@ def inference(model, test_loader, output_dir):
 
             gt_vis = visualize_gt(img_show, gt_contour, label_tag)
             show_boundary, heat_map = visualize_detection(img_show, output_dict, meta=meta)
-
+            # heat_map[:,:320,1]
+            # print(heat_map.min(), heat_map.max())
+            # print(heat_map)
+            heat_map = np.where(heat_map > 127.5, 255, 0)
+            show_boundary[:,:320,0] = show_boundary[:,:320,0] + heat_map[:,:320,1]
+            show_boundary[:,:320,1] = show_boundary[:,:320,1] + heat_map[:,:320,1]
+            show_boundary[:,:320,2] = show_boundary[:,:320,2] + heat_map[:,:320,1]
+            
+            show_boundary[:,320:640,0] = show_boundary[:,320:640,0] + heat_map[:,:320,1]
+            show_boundary[:,320:640,1] = show_boundary[:,320:640,1] + heat_map[:,:320,1]
+            show_boundary[:,320:640,2] = show_boundary[:,320:640,2] + heat_map[:,:320,1]
+            
+            
+            show_boundary[:,640:,0] = show_boundary[:,640:,0] + heat_map[:,:320,1]
+            show_boundary[:,640:,1] = show_boundary[:,640:,1] + heat_map[:,:320,1]
+            show_boundary[:,640:,2] = show_boundary[:,640:,2] + heat_map[:,:320,1]
+            # print(heat_map[:,:,0].shape)
+            # print(heat_map[:,:320,0].shape)
             show_map = np.concatenate([heat_map, gt_vis], axis=1)
             show_map = cv2.resize(show_map, (320 * 3, 320))
             im_vis = np.concatenate([show_map, show_boundary], axis=0)
             path = os.path.join(cfg.vis_dir, '{}_{}_{}_test'.format(cfg.iter, cfg.exp_name, cfg.num_poly), meta['image_id'][idx].split(".")[0]+".jpg")
+            m_path = os.path.join(cfg.vis_dir, '{}_{}_{}_test'.format(cfg.iter, cfg.exp_name, cfg.num_poly), meta['image_id'][idx].split(".")[0]+"_m.jpg")
             cv2.imwrite(path, im_vis)
+            cv2.imwrite(m_path, heat_map[:,:320,1])
 
         contours = output_dict["py_preds"][-1].int().cpu().numpy()
         img_show, contours = rescale_result(img_show, contours, H, W)
@@ -136,6 +155,10 @@ def inference(model, test_loader, output_dir):
             fname = "res_" + meta['image_id'][idx].split(".")[0]+".txt"
             data_transfer_TD500(contours, os.path.join(output_dir, fname))
         elif cfg.exp_name == "Custom":
+            
+            p_contours = np.array(contours, np.int32)
+            p_gt_contour = np.array(gt_contour, np.int32)
+            
             fname = "res_img_" + meta['image_id'][idx].replace('png', 'txt')
             contours = data_transfer_Custom(contours)
             write_to_file(contours, os.path.join(output_dir, fname))
@@ -145,7 +168,24 @@ def inference(model, test_loader, output_dir):
             fname = "gt_img_" + meta['image_id'][idx].replace('png', 'txt')
             gt_contour = data_transfer_Custom(gt_contour)
             # print(gt_contour)
+
+            # w, h, _ = img_show.shape            
+            # tr_mask = np.zeros((h, w, 1), np.uint8)
+            # gt_mask = np.zeros((h, w, 1), np.uint8)
+
+            # print(p_contours)
+            # print(p_gt_contour)
+            # p_contours = cv2.fillPoly(tr_mask, [p_contours], (255,255,255)) // 255
+            # p_gt_contour = cv2.fillPoly(gt_mask, [p_gt_contour], (255,255,255)) // 255
+
+            # union = p_contours + p_gt_contour
+            # uni = np.clip(union, 0,1)
+            
+            # area = np.clip(union, 1,2) - 1
+            # print(uni.sum(), area.sum())
+
             write_to_file(gt_contour, os.path.join(output_dir,'gt', fname), gt=True)
+            
             
         elif cfg.exp_name == "ArT":
             fname = meta['image_id'][idx].split(".")[0].replace('gt', 'res')

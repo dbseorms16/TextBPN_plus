@@ -64,7 +64,13 @@ def perform_operation(images, back, magnitude, is_training=False):
         # have identical dimensions!
         width,height = images.size
         b_w, b_h = back.size
-        images = images.resize((int(width//3), int(height//3)))
+        
+        max_r = max(width / b_w, b_w / width) + random.randint(1,10) * 0.1
+        print(max_r)
+        # target_h = abs(h_w - he) * 2
+        images = images.resize((int(width//max_r), int(height//max_r)))
+        # images = images.resize((int(width//1.5), int(height//1.5)))
+        # images = images.resize((int(width), int(height)))
         w, h = images.size
         # w, h = images[0].size
 

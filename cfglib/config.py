@@ -68,7 +68,8 @@ config.approx_factor = 0.004
 
 def update_config(config, extra_config):
     config.max_annotation = extra_config.num_poly * 4
-    config.num_points = extra_config.num_poly * 4
+    # config.num_points = extra_config.num_poly * 4
+    config.num_points = 20
     
     for k, v in vars(extra_config).items():
         config[k] = v
