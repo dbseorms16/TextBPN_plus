@@ -75,6 +75,14 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
     global train_step
 
     losses = AverageMeter()
+    cls_loss = AverageMeter()
+    distance = AverageMeter()
+    dir_loss = AverageMeter()
+    norm_loss = AverageMeter()
+    angle_loss = AverageMeter()
+    point_loss = AverageMeter()
+    energy_loss = AverageMeter()
+    
     batch_time = AverageMeter()
     data_time = AverageMeter()
     end = time.time()
@@ -104,6 +112,14 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
         optimizer.step()
 
         losses.update(loss.item())
+        cls_loss.update(loss_dict["cls_loss"].item())
+        distance.update(loss_dict["distance loss"].item())
+        dir_loss.update(loss_dict["dir_loss"].item())
+        norm_loss.update(loss_dict["norm_loss"].item())
+        angle_loss.update(loss_dict["angle_loss"].item())
+        point_loss.update(loss_dict["point_loss"].item())
+        energy_loss.update(loss_dict["energy_loss"].item())
+        
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -111,12 +127,12 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
         if cfg.viz and (i % cfg.viz_freq == 0 and i > 0) and epoch % 8 == 0:
             visualize_network_output(output_dict, input_dict, mode='train')
 
-        if i % cfg.display_freq == 0:
-            gc.collect()
-            print_inform = "({:d} / {:d}) ".format(i, len(train_loader))
-            for (k, v) in loss_dict.items():
-                print_inform += " {}: {:.4f} ".format(k, v.item())
-            print(print_inform)
+        # if i % cfg.display_freq == 0:
+        #     gc.collect()
+        #     print_inform = "({:d} / {:d}) ".format(i, len(train_loader))
+        #     for (k, v) in loss_dict.items():
+        #         print_inform += " {}: {:.4f} ".format(k, v.item())
+            # print(print_inform)
 
     if cfg.exp_name == 'Synthtext' or cfg.exp_name == 'ALL':
         if epoch % cfg.save_freq == 0:
@@ -132,7 +148,16 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch):
         if epoch % cfg.save_freq == 0:
             save_model(model, epoch, scheduler.get_lr(), optimizer)
 
-    print('Epoch: {} : LR = {}'.format(epoch, scheduler.get_lr()), 'Training Loss: {}'.format(losses.avg))
+    print('Epoch: {} : LR = {}'.format(epoch, scheduler.get_lr()), 
+          'Training Loss: {:.5f} '.format(losses.avg),
+          'cls_loss Loss: {:.5f} '.format(cls_loss.avg),
+          'distance Loss: {:.5f} '.format(distance.avg),
+          'dir_loss Loss: {:.5f} '.format(dir_loss.avg),
+          'norm_loss Loss: {:.5f} '.format(norm_loss.avg),
+          'angle_loss Loss: {:.5f} '.format(angle_loss.avg),
+          'point_loss Loss: {:.5f} '.format(point_loss.avg),
+          'energy_loss Loss: {:.5f} '.format(energy_loss.avg),
+          )
 
 
 

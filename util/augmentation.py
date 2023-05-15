@@ -66,7 +66,6 @@ def perform_operation(images, back, magnitude, is_training=False):
         b_w, b_h = back.size
         
         max_r = max(width / b_w, b_w / width) + random.randint(1,10) * 0.1
-        print(max_r)
         # target_h = abs(h_w - he) * 2
         images = images.resize((int(width//max_r), int(height//max_r)))
         # images = images.resize((int(width//1.5), int(height//1.5)))

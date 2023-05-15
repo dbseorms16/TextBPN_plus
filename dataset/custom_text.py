@@ -16,8 +16,8 @@ class CustomText(TextDataset):
         self.is_training = is_training
         self.load_memory = load_memory
         self.cfg = cfg
-        self.image_root = os.path.join(data_root, 'train' if is_training else 'sub')
-        self.back_root =  os.path.join(data_root, 'train_back' if is_training else 'sub2_back')
+        self.image_root = os.path.join(data_root, 'train' if is_training else 'test')
+        self.back_root =  os.path.join(data_root, 'train_back' if is_training else 'test_back')
         # self.annotation_root = os.path.join(data_root, 'train' if is_training else 'test', "text_label_circum")
         self.image_list = os.listdir(self.image_root)
         self.back_image_list = os.listdir(self.back_root)
@@ -56,8 +56,8 @@ class CustomText(TextDataset):
                 image_id = self.back_image_list[random_id]
             else:
                 ##Todo auto
-                # image_id = '0'+ image_id[1:-4] + '.jpg'
-                image_id = image_id[1:-4] + '.jpg'
+                image_id = '0'+ image_id[1:-4] + '.jpg'
+                # image_id = image_id[1:-4] + '.jpg'
             back_data = self.load_img(self.back_root, image_id)
             
         image, polygons = perform_operation(data['image'], back_data['image'], magnitude=0.1, is_training=self.is_training )
